@@ -77,10 +77,12 @@ class DOMJudgeXHeadersAuthenticator extends AbstractGuardAuthenticator
      * Called on every request. Return whatever credentials you want to
      * be passed to getUser() as $credentials.
      */
+    // Anggep ae username iki e-mail yo
     public function getCredentials(Request $request)
     {
         return [
-            'username' => trim($request->headers->get('X-DOMjudge-Login')),
+//             'username' => trim($request->headers->get('X-DOMjudge-Login')),
+            'username' => $this->getEmailFromSchematics(trim($request->headers->get('X-DOMjudge-Login'))),
             'password' => $password = base64_decode(trim($request->headers->get('X-DOMjudge-Pass'))),
         ];
     }
@@ -92,10 +94,47 @@ class DOMJudgeXHeadersAuthenticator extends AbstractGuardAuthenticator
         }
         return $userProvider->loadUserByUsername($credentials['username']);
     }
+    
+    private function getEmailFromSchematics($jwt) {
+        try {
+            // API URL
+            $url = 'https://schematics.its.ac.id/api/user/get-user-info';
+
+            // Create a new cURL resource
+            $ch = curl_init($url);
+
+            // Setup request to send json via POST
+            $payload = json_encode(array());
+
+            // Attach encoded JSON string to the POST fields
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+            // Set the content type to application/json
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json', 'Authorization: Bearer '.$jwt));
+
+            // Return response instead of outputting
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+            // Execute the POST request
+            $result = curl_exec($ch);
+
+            // Close cURL resource
+            curl_close($ch);
+
+            $data = json_decode($result, true);
+            return $data['data']['email'];
+        } catch($e) {
+            var_dump($e->getMessage());
+            return null;
+        }
+    }
 
     public function checkCredentials($credentials, UserInterface $user)
     {
-        return $this->encoder->isPasswordValid($user, $credentials['password']);
+        return true;
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, $providerKey)
