@@ -126,7 +126,7 @@ class DOMJudgeXHeadersAuthenticator extends AbstractGuardAuthenticator
 
             $data = json_decode($result, true);
             return $data['data']['email'];
-        } catch($e) {
+        } catch(\Exception $e) {
             var_dump($e->getMessage());
             return null;
         }
